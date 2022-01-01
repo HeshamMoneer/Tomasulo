@@ -11,4 +11,8 @@ public class Tomasulo {
 	ReservationStation[] mulStation;
 	int cycle, addLatency, subLatency, mulLatency, divLatency;
 	LinkedList<Instruction> instrucionQueue;
+
+	public static void main(String[] args) {
+		System.out.println(123);
+	}
 }
