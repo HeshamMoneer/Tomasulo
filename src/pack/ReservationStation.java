@@ -36,9 +36,13 @@ public class ReservationStation {
 				return -1;
 		}
 
-	}
+	} 
 
-	public void decrementRemainingCycles(){
+	public void decrementRemainingCycles()
+	{
+		if(!this.busy)return;
+		if(this.remainingCycles == 0)
+			return;
 		this.remainingCycles = Math.max(0, this.remainingCycles-1);
 	}
 

@@ -1,6 +1,7 @@
 package pack;
 
 
+import javax.xml.transform.Source;
 
 public class Tomasulo {
 	double[] RAM;
@@ -121,6 +122,83 @@ public class Tomasulo {
 				currentIndex++;
 				return;
 			}
+	}
+
+	public void execute(){
+		for(ReservationStation rs : addStation)
+			if(rs.busy && rs.qJ == SourceQ.ZERO && rs.qK == SourceQ.ZERO)
+				rs.decrementRemainingCycles();
+		for(ReservationStation rs : mulStation)
+			if(rs.busy && rs.qJ == SourceQ.ZERO && rs.qK == SourceQ.ZERO)
+				rs.decrementRemainingCycles();
+		for(StoreBuffer sb : storeStation)
+			if(sb.busy && sb.qI == SourceQ.ZERO)
+				sb.decrementRemainingCycles();
+		for(LoadBuffer lb : loadStation)
+			if(lb.busy)
+				lb.decrementRemainingCycles();
+	}
+
+	public void writeResult()
+	{
+		// starting with the add station
+		for(ReservationStation rs : addStation)
+			if(rs.finished())
+			{
+				double val =rs.execute();
+				registerFile[rs.instructionIndex].writeValue(val);
+				instrucionQueue[rs.instructionIndex].writeCycle = currentCycle;
+				writeReservations(rs.name, val);
+				break;
+			}
+		for(ReservationStation rs : mulStation)
+			if(rs.finished())
+			{
+				double val =rs.execute();
+				registerFile[rs.instructionIndex].writeValue(val);
+				instrucionQueue[rs.instructionIndex].writeCycle = currentCycle;
+				writeReservations(rs.name, val);
+				break;
+			}
+
+		for(LoadBuffer lb : loadStation)
+			if(lb.finished())
+			{
+				double val =lb.execute();
+				registerFile[lb.instructionIndex].writeValue(val);
+				instrucionQueue[lb.instructionIndex].writeCycle = currentCycle;
+				writeReservations(lb.name, val);
+				break;
+			}
+	}
+
+	public void writeReservations(SourceQ reservationName, double val){
+		for(ReservationStation rs : addStation)
+			if(rs.busy)
+				writeReservation(reservationName, val, rs);
+		for(ReservationStation rs : mulStation)
+			if(rs.busy)
+				writeReservation(reservationName, val, rs);
+
+		for(StoreBuffer sb : storeStation)
+			if(sb.busy && sb.qI==reservationName)
+			{
+				sb.qI = SourceQ.ZERO;
+				sb.val = val;
+			}
+	}
+	public void writeReservation(SourceQ reservationName, double val, ReservationStation rs){
+		if(rs.qJ == reservationName)
+		{
+			rs.qJ = SourceQ.ZERO;
+			rs.vJ = val;
+		}
+
+		if(rs.qK == reservationName)
+		{
+			rs.qK = SourceQ.ZERO;
+			rs.vK = val;
+		}
 	}
 
 	public static void main(String[] args) {
