@@ -13,8 +13,8 @@ public class StringParser {
 	//The operands registers shall have no spaces between them but rather commas
 	//The instruction and the operands are separated with a white space
 
-	public StringParser(String MIPScode) {
-		instructions = new LinkedList<Instruction>();
+	public static LinkedList<Instruction> parse(String MIPScode) {
+		LinkedList<Instruction> instructions = new LinkedList<Instruction>();
 		String[] lines = MIPScode.split("\n");
 		for(String line : lines) {
 			OpCode opCode;
@@ -39,11 +39,12 @@ public class StringParser {
 			}
 			instructions.addLast(new Instruction(opCode, source1, source2, destination));
 		}
+		return instructions;
 	}
 	
 	public static void main(String[] args) {
-		StringParser sp = new StringParser("L.D F1,100\nS.D F2,200\nADD.D F11,F12,F13");
-		for(Instruction i : sp.instructions) {
+		LinkedList<Instruction> instructions= StringParser.parse("L.D F1,100\nS.D F2,200\nADD.D F11,F12,F13");
+		for(Instruction i : instructions) {
 			System.out.println(i);
 		}
 	}
