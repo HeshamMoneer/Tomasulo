@@ -2,6 +2,11 @@ package pack;
 
 
 import javax.xml.transform.Source;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.nio.Buffer;
+import java.util.Arrays;
 
 public class Tomasulo {
 	double[] RAM;
@@ -14,16 +19,16 @@ public class Tomasulo {
 	Instruction[] instrucionQueue;
 
 	public Tomasulo(String program){
-		this(3, 3, 4, 8, 1, 1, program);
+		this(3, 3, 4, 8, 5, 3, program);
 	}
 
 	public Tomasulo(int addLatency, int subLatency, int mulLatency, int divLatency, int loadLatency, int storeLatency, String program){
-		this.RAM = new double[1<<11];
-		for(int i=0;i<1<<11;i++){
-			this.RAM[i] = i+1;
+		this.RAM = new double[2048];
+		for(int i=0;i<RAM.length;i++){
+			this.RAM[i] = i;
 		}
 		this.registerFile = new Register[32];
-		for(int i=0;i<32;i++)
+		for(int i=0;i<registerFile.length;i++)
 			this.registerFile[i] = new Register();
 		this.storeStation = new StoreBuffer[3];
 		this.loadStation = new LoadBuffer[3];
@@ -62,9 +67,9 @@ public class Tomasulo {
 	}
 
 	public void issue(){
-		if(currentCycle>= instrucionQueue.length)
+		if(currentIndex>= instrucionQueue.length)
 			return;
-		Instruction next = instrucionQueue[currentCycle];
+		Instruction next = instrucionQueue[currentIndex];
 		switch (next.opCode){
 			case SUB:
 				findReservation(next, addStation, subLatency);
@@ -88,6 +93,7 @@ public class Tomasulo {
 						lb.issueInstruction(next.source1, currentIndex, loadLatency);
 						registerFile[next.destination].waitForValue(lb.name);
 						currentIndex++;
+						next.issueCycle = currentCycle;
 						return;
 					}
 				break;
@@ -105,6 +111,7 @@ public class Tomasulo {
 					{
 						lb.issueInstruction(next.source1, registerFile[next.destination], currentIndex, loadLatency);
 						currentIndex++;
+						next.issueCycle = currentCycle;
 						return;
 					}
 				break;
@@ -117,58 +124,108 @@ public class Tomasulo {
 	{
 		for(ReservationStation rs : r)
 			if(!rs.busy){
-				rs.issueInstruction(i.opCode, registerFile[i.source1], registerFile[i.source2], latency, currentIndex);
+				rs.issueInstruction(i.opCode, registerFile[i.source1], registerFile[i.source2], currentIndex, latency);
 				registerFile[i.destination].waitForValue(rs.name);
 				currentIndex++;
+				i.issueCycle = currentCycle;
 				return;
 			}
 	}
 
+	public void executeReservation(ReservationStation rs){
+		if(!rs.isRunning && rs.remainingCycles !=0)
+		{
+			instrucionQueue[rs.instructionIndex].startCycle = currentCycle;
+			rs.isRunning = true;
+		}
+
+		rs.decrementRemainingCycles();
+		if(rs.isRunning && rs.remainingCycles == 0)
+		{
+			instrucionQueue[rs.instructionIndex].endCycle = currentCycle;
+			rs.isRunning = false;
+		}
+	}
+
 	public void execute(){
 		for(ReservationStation rs : addStation)
-			if(rs.busy && rs.qJ == SourceQ.ZERO && rs.qK == SourceQ.ZERO)
-				rs.decrementRemainingCycles();
+			if(rs.busy && rs.qJ == SourceQ.ZERO && rs.qK == SourceQ.ZERO && instrucionQueue[rs.instructionIndex].issueCycle != currentCycle)
+			{
+				executeReservation(rs);
+			}
 		for(ReservationStation rs : mulStation)
-			if(rs.busy && rs.qJ == SourceQ.ZERO && rs.qK == SourceQ.ZERO)
-				rs.decrementRemainingCycles();
+			if(rs.busy && rs.qJ == SourceQ.ZERO && rs.qK == SourceQ.ZERO && instrucionQueue[rs.instructionIndex].issueCycle != currentCycle)
+				executeReservation(rs);
 		for(StoreBuffer sb : storeStation)
-			if(sb.busy && sb.qI == SourceQ.ZERO)
+			if(sb.busy && sb.qI == SourceQ.ZERO && instrucionQueue[sb.instructionIndex].issueCycle != currentCycle)
+			{
+				if(!sb.isRunning && sb.remainingCycles !=0)
+				{
+					instrucionQueue[sb.instructionIndex].startCycle = currentCycle;
+					sb.isRunning = true;
+				}
 				sb.decrementRemainingCycles();
+				if(sb.isRunning && sb.remainingCycles==0)
+				{
+					instrucionQueue[sb.instructionIndex].endCycle = currentCycle;
+					sb.isRunning = false;
+					RAM[sb.address] = sb.val;
+					sb.busy = false;
+				}
+			}
 		for(LoadBuffer lb : loadStation)
-			if(lb.busy)
+			if(lb.busy && instrucionQueue[lb.instructionIndex].issueCycle != currentCycle)
+			{
+				if(!lb.isRunning && lb.remainingCycles !=0)
+				{
+					instrucionQueue[lb.instructionIndex].startCycle = currentCycle;
+					lb.isRunning = true;
+				}
 				lb.decrementRemainingCycles();
+				if(lb.isRunning && lb.remainingCycles==0)
+				{
+					instrucionQueue[lb.instructionIndex].endCycle = currentCycle;
+					lb.isRunning = false;
+				}
+			}
+	}
+
+	public void writeReservation(ReservationStation rs){
+		double val =rs.execute();
+		if(registerFile[instrucionQueue[rs.instructionIndex].destination].qI == rs.name)
+			registerFile[instrucionQueue[rs.instructionIndex].destination].writeValue(val);
+		instrucionQueue[rs.instructionIndex].writeCycle = currentCycle;
+		writeReservations(rs.name, val);
+		rs.busy = false;
 	}
 
 	public void writeResult()
 	{
 		// starting with the add station
 		for(ReservationStation rs : addStation)
-			if(rs.finished())
+			if(rs.finished() && instrucionQueue[rs.instructionIndex].endCycle != currentCycle)
 			{
-				double val =rs.execute();
-				registerFile[rs.instructionIndex].writeValue(val);
-				instrucionQueue[rs.instructionIndex].writeCycle = currentCycle;
-				writeReservations(rs.name, val);
-				break;
+				writeReservation(rs);
+				return;
 			}
 		for(ReservationStation rs : mulStation)
-			if(rs.finished())
+			if(rs.finished() && instrucionQueue[rs.instructionIndex].endCycle != currentCycle)
 			{
-				double val =rs.execute();
-				registerFile[rs.instructionIndex].writeValue(val);
-				instrucionQueue[rs.instructionIndex].writeCycle = currentCycle;
-				writeReservations(rs.name, val);
-				break;
+				writeReservation(rs);
+				return;
 			}
 
 		for(LoadBuffer lb : loadStation)
-			if(lb.finished())
+			if(lb.finished() && instrucionQueue[lb.instructionIndex].endCycle != currentCycle)
 			{
-				double val =lb.execute();
-				registerFile[lb.instructionIndex].writeValue(val);
+				double val = RAM[lb.address];
+
+				if(registerFile[instrucionQueue[lb.instructionIndex].destination].qI == lb.name)
+					registerFile[instrucionQueue[lb.instructionIndex].destination].writeValue(val);
 				instrucionQueue[lb.instructionIndex].writeCycle = currentCycle;
 				writeReservations(lb.name, val);
-				break;
+				lb.busy = false;
+				return;
 			}
 	}
 
@@ -201,7 +258,66 @@ public class Tomasulo {
 		}
 	}
 
-	public static void main(String[] args) {
+	public void performCycle(){
+		currentCycle++;
+		issue();
+		execute();
+		writeResult();
+	}
+
+	public boolean isDone(){
+		if(currentIndex<instrucionQueue.length)return false;
+		for(ReservationStation rs : addStation)
+			if(rs.busy)return false;
+		for(ReservationStation rs : mulStation)
+			if(rs.busy) return false;
+		for(LoadBuffer lb : loadStation)
+			if(lb.busy)return false;
+		for(StoreBuffer sb : storeStation)
+			if(sb.busy)return false;
+		return true;
+	}
+
+	public static void main(String[] args) throws IOException {
+		String program = "L.D F0,1\n" +
+				"S.D F1,1";
+//				"ADD.D F2,F0,F1\n" +
+//				"ADD.D F2,F2,F2\n"+
+//				"ADD.D F2,F2,F2\n"+
+//				"ADD.D F2,F2,F2\n"+
+//				"S.D F2,0\n";
+		Tomasulo architecture = new Tomasulo(program);
+		System.out.println(Arrays.toString(architecture.instrucionQueue));
+		BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+		while(!architecture.isDone())
+		{
+//			String inp = br.readLine();
+			architecture.performCycle();
+			System.out.println(architecture.currentCycle);
+			System.out.println("instruction queue");
+			for(Instruction i : architecture.instrucionQueue)
+				System.out.println(i);
+
+			System.out.println("RAM");
+			System.out.println(Arrays.toString(architecture.RAM));
+
+
+			System.out.println("register file");
+			System.out.println(Arrays.toString(architecture.registerFile));
+
+			System.out.println("Add stations");
+			System.out.println(Arrays.toString(architecture.addStation));
+
+			System.out.println("Mul stations");
+			System.out.println(Arrays.toString(architecture.mulStation));
+
+			System.out.println("load buffers");
+			System.out.println(Arrays.toString(architecture.loadStation));
+
+			System.out.println("store buffers");
+			System.out.println(Arrays.toString(architecture.storeStation));
+
+		}
 
 	}
 }

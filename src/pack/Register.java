@@ -22,5 +22,9 @@ public class Register {
 	{
 		this.qI = q;
 	}
+
+	public String toString(){
+		return "("+this.qI + ", "+this.val+")";
+	}
 	
 }

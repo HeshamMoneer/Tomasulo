@@ -8,6 +8,7 @@ public class StoreBuffer {
 	SourceQ qI;
 	int instructionIndex;
 	int remainingCycles;
+	boolean isRunning;
 
 	public StoreBuffer(){
 
@@ -17,14 +18,17 @@ public class StoreBuffer {
 		this.qI = SourceQ.ZERO;
 		this.instructionIndex=-1;
 		this.remainingCycles = -1;
+		this.isRunning = false;
 	}
 
-	public void issueInstruction(int address, Register f1, int latency, int instructionIndex) {
+	public void issueInstruction(int address, Register f1, int instructionIndex, int latency) {
 		this.address = address;
+		this.busy = true;
 		this.val = (f1.qI == SourceQ.ZERO)? f1.val : this.val;
 		this.qI = f1.qI;
 		this.remainingCycles = latency;
 		this.instructionIndex = instructionIndex;
+		this.isRunning = false;
 	}
 
 	public boolean clashes(int index){
@@ -37,6 +41,10 @@ public class StoreBuffer {
 
 	public void decrementRemainingCycles(){
 		this.remainingCycles = Math.max(0, this.remainingCycles-1);
+	}
+
+	public String toString(){
+		return "("+this.val + ", "+this.qI + ", "+ this.address + ", " + this.remainingCycles + ", "+this.busy+")";
 	}
 
 }
