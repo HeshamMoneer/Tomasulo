@@ -1,0 +1,11 @@
+<component name="libraryTable">
+  <library name="openjfx-17.0.1_windows-x64_bin-sdk">
+    <CLASSES>
+      <root url="file://$PROJECT_DIR$/../../openjfx-17.0.1_windows-x64_bin-sdk/javafx-sdk-17.0.1/lib" />
+      <root url="jar://$PROJECT_DIR$/../../bootstrapfx-core-0.4.0.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+    <jarDirectory url="file://$PROJECT_DIR$/../../openjfx-17.0.1_windows-x64_bin-sdk/javafx-sdk-17.0.1/lib" recursive="false" />
+  </library>
+</component>
