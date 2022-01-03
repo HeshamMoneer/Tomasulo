@@ -2,20 +2,12 @@ package sample;
 
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
-import javafx.fxml.FXMLLoader;
-import javafx.geometry.HPos;
-import javafx.geometry.Pos;
-import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Label;
-import javafx.scene.control.Tooltip;
 import javafx.scene.layout.GridPane;
-import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
-
 import java.io.IOException;
-import java.util.Arrays;
 
 public class AppPageController {
     private Tomasulo architecture;
@@ -51,6 +43,7 @@ public class AppPageController {
             setInstructionQ();
             setRegFile();
             setAddRs();
+            setMulRs();
             setLoadBuff();
             setStoreBuff();
 
@@ -98,6 +91,7 @@ public class AppPageController {
 
 
     public void setRegFile() {
+
         for (int i = 1; i <= architecture.registerFile.length; i++) {
             Register r = architecture.registerFile[i - 1];
             Label val = new Label(r.val + "");
@@ -114,10 +108,10 @@ public class AppPageController {
             ReservationStation r = architecture.addStation[i - 1];
             if (r.busy) {
                 ((Label) addRs.getChildren().get(i + 4 + 1)).setText(r.opCode.name());
-                if (r.vJ != -1) {
+                if (r.vJ != -1&&r.qJ==SourceQ.ZERO) {
                     ((Label) addRs.getChildren().get(i + 4 * 2 + 1)).setText(r.vJ + " ");
                 }
-                if (r.vK != -1) {
+                if (r.vK != -1&& r.qK==SourceQ.ZERO) {
                     ((Label) addRs.getChildren().get(i + 4 * 3 + 1)).setText(r.vK + " ");
                 }
 
@@ -142,27 +136,27 @@ public class AppPageController {
         for (int i = 1; i <= architecture.mulStation.length; i++) {
             ReservationStation r = architecture.mulStation[i - 1];
             if (r.busy) {
-                ((Label) mulRs.getChildren().get(i + 4 + 1)).setText(r.opCode.name());
-                if (r.vJ != -1) {
-                    ((Label) mulRs.getChildren().get(i + 4 * 2 + 1)).setText(r.vJ + " ");
+                ((Label) mulRs.getChildren().get(i + 3 + 1)).setText(r.opCode.name());
+                if (r.vJ != -1&& r.qJ==SourceQ.ZERO) {
+                    ((Label) mulRs.getChildren().get(i + 3 * 2 + 1)).setText(r.vJ + " ");
                 }
-                if (r.vK != -1) {
-                    ((Label) mulRs.getChildren().get(i + 4 * 3 + 1)).setText(r.vK + " ");
+                if (r.vK != -1&& r.qK==SourceQ.ZERO) {
+                    ((Label) mulRs.getChildren().get(i + 3 * 3 + 1)).setText(r.vK + " ");
                 }
 
-                ((Label) mulRs.getChildren().get(i + 4 * 4 + 1)).setText(r.qJ.name());
-                ((Label) mulRs.getChildren().get(i + 4 * 5 + 1)).setText(r.qK.name());
-                ((Label) mulRs.getChildren().get(i + 4 * 6 + 1)).setText(r.busy + "");
+                ((Label) mulRs.getChildren().get(i + 3 * 4 + 1)).setText(r.qJ.name());
+                ((Label) mulRs.getChildren().get(i + 3 * 5 + 1)).setText(r.qK.name());
+                ((Label) mulRs.getChildren().get(i + 3 * 6 + 1)).setText(r.busy + "");
                 if (r.remainingCycles != -1)
-                    ((Label) mulRs.getChildren().get(i + 4 * 7 + 1)).setText(r.remainingCycles + "");
+                    ((Label) mulRs.getChildren().get(i + 3 * 7 + 1)).setText(r.remainingCycles + "");
             } else {
-                ((Label) mulRs.getChildren().get(i + 4 + 1)).setText("");
-                ((Label) mulRs.getChildren().get(i + 4 * 2 + 1)).setText("");
-                ((Label) mulRs.getChildren().get(i + 4 * 3 + 1)).setText("");
-                ((Label) mulRs.getChildren().get(i + 4 * 4 + 1)).setText("");
-                ((Label) mulRs.getChildren().get(i + 4 * 5 + 1)).setText("");
-                ((Label) mulRs.getChildren().get(i + 4 * 6 + 1)).setText("false");
-                ((Label) mulRs.getChildren().get(i + 4 * 7 + 1)).setText("");
+                ((Label) mulRs.getChildren().get(i + 3 + 1)).setText("");
+                ((Label) mulRs.getChildren().get(i + 3 * 2 + 1)).setText("");
+                ((Label) mulRs.getChildren().get(i + 3 * 3 + 1)).setText("");
+                ((Label) mulRs.getChildren().get(i + 3 * 4 + 1)).setText("");
+                ((Label) mulRs.getChildren().get(i + 3 * 5 + 1)).setText("");
+                ((Label) mulRs.getChildren().get(i + 3 * 6 + 1)).setText("false");
+                ((Label) mulRs.getChildren().get(i + 3 * 7 + 1)).setText("");
             }
         }
     }
@@ -196,7 +190,7 @@ public class AppPageController {
                     ((Label) storeBuff.getChildren().get(i + 1)).setText(r.address + " ");
                 }
 
-                if (r.val != -1)
+                if (r.val != -1&&r.qI==SourceQ.ZERO)
                     ((Label) storeBuff.getChildren().get(i + 4 + 1)).setText(r.val + "");
                 ((Label) storeBuff.getChildren().get(i + 4*2 + 1)).setText(r.qI.name());
                 ((Label) storeBuff.getChildren().get(i + 4*3 + 1)).setText(r.busy + "");
@@ -206,7 +200,7 @@ public class AppPageController {
             } else {
                 ((Label) storeBuff.getChildren().get(i +1)).setText("");
                 ((Label) storeBuff.getChildren().get(i + 4  + 1)).setText("");
-                ((Label) storeBuff.getChildren().get(i + 4*2  + 2)).setText("");
+                ((Label) storeBuff.getChildren().get(i + 4*2  + 1)).setText("");
                 ((Label) storeBuff.getChildren().get(i + 4 *3 + 1)).setText("false");
                 ((Label) storeBuff.getChildren().get(i + 4 *4 + 1)).setText("");
             }
