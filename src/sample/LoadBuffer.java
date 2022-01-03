@@ -1,34 +1,31 @@
-package pack;
+package sample;
 
-public class StoreBuffer {
-
+public class LoadBuffer {
+	SourceQ name;
 	boolean busy;
 	int address;
-	double val;
-	SourceQ qI;
-	int instructionIndex;
+	int instructionIndex; // to keep track of the instruction this is being executed in the load buffer
 	int remainingCycles;
 	boolean isRunning;
-
-	public StoreBuffer(){
-
+	public LoadBuffer(SourceQ name){
+		this.name = name;
 		this.busy = false;
 		this.address = -1;
-		this.val = -1;
-		this.qI = SourceQ.ZERO;
 		this.instructionIndex=-1;
 		this.remainingCycles = -1;
 		this.isRunning = false;
 	}
-
-	public void issueInstruction(int address, Register f1, int instructionIndex, int latency) {
+	
+	public void issueInstruction(int address, int instructionIndex, int latency) {
 		this.address = address;
 		this.busy = true;
-		this.val = (f1.qI == SourceQ.ZERO)? f1.val : this.val;
-		this.qI = f1.qI;
-		this.remainingCycles = latency;
 		this.instructionIndex = instructionIndex;
+		this.remainingCycles = latency;
 		this.isRunning = false;
+	}
+	
+	public double execute() {
+		return 0;
 	}
 
 	public boolean clashes(int index){
@@ -44,7 +41,6 @@ public class StoreBuffer {
 	}
 
 	public String toString(){
-		return "("+this.val + ", "+this.qI + ", "+ this.address + ", " + this.remainingCycles + ", "+this.busy+")";
+		return "("+this.name + ": "+this.address+ ", "+this.busy+ ", "+this.remainingCycles +")";
 	}
-
 }

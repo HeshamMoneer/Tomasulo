@@ -1,11 +1,12 @@
-package pack;
+package sample;
 
 
-import javax.xml.transform.Source;
+import javafx.fxml.FXML;
+import javafx.scene.layout.GridPane;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.nio.Buffer;
 import java.util.Arrays;
 
 public class Tomasulo {
@@ -17,6 +18,8 @@ public class Tomasulo {
 	ReservationStation[] mulStation;
 	int currentIndex, currentCycle, addLatency, subLatency, mulLatency, divLatency, loadLatency, storeLatency;
 	Instruction[] instrucionQueue;
+    @FXML
+	GridPane instructionQ;
 
 	public Tomasulo(String program){
 		this(3, 3, 4, 8, 5, 3, program);
@@ -286,6 +289,7 @@ public class Tomasulo {
 //				"ADD.D F2,F2,F2\n"+
 //				"ADD.D F2,F2,F2\n"+
 //				"S.D F2,0\n";
+
 		Tomasulo architecture = new Tomasulo(program);
 		System.out.println(Arrays.toString(architecture.instrucionQueue));
 		BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
@@ -295,9 +299,9 @@ public class Tomasulo {
 			architecture.performCycle();
 			System.out.println(architecture.currentCycle);
 			System.out.println("instruction queue");
-			for(Instruction i : architecture.instrucionQueue)
-				System.out.println(i);
-
+			for(int i=0;i<architecture.instrucionQueue.length;i++) {
+				System.out.println();
+			}
 			System.out.println("RAM");
 			System.out.println(Arrays.toString(architecture.RAM));
 

@@ -1,4 +1,4 @@
-package pack;
+package sample;
 
 public class Instruction {
 	OpCode opCode;

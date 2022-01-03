@@ -1,4 +1,4 @@
-package pack;
+package sample;
 
 public class Register {
 	double val;
@@ -26,5 +26,5 @@ public class Register {
 	public String toString(){
 		return "("+this.qI + ", "+this.val+")";
 	}
-	
+
 }
